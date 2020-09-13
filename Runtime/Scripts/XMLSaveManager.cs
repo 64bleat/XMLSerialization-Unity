@@ -8,7 +8,7 @@ namespace Serialization
     /// </summary>
     public class XMLSaveManager : ScriptableObject
     {
-        public BroadcastChannel messageChannel;
+        //public BroadcastChannel messageChannel;
         public static bool isRunning = false;
 
         private void OnDestroy()
@@ -23,8 +23,8 @@ namespace Serialization
 
             Time.timeScale = 0;
 
-            if (messageChannel)
-                messageChannel.Broadcast("Quicksaved");
+            //if (messageChannel)
+            //    messageChannel.Broadcast("Quicksaved");
 
             XMLSerialization.Save(new SceneXML(SceneManager.GetActiveScene()), "Quicksave");
 
@@ -42,8 +42,8 @@ namespace Serialization
             if (data != null)
                 data.Deserialize(SceneManager.GetActiveScene());
 
-            if (messageChannel)
-                messageChannel.Broadcast("Quickloaded");
+            //if (messageChannel)
+            //    messageChannel.Broadcast("Quickloaded");
 
             Time.timeScale = originalTime;
             isRunning = false;

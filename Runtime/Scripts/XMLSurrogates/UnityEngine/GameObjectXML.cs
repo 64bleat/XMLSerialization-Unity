@@ -1,11 +1,7 @@
-﻿using SHK.Creatures;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Xml.Serialization;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Serialization
 {

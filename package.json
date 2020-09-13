@@ -1,0 +1,19 @@
+{
+  "name": "com.64bleat.xmlserialization",
+  "version": "0.1.0",
+  "displayName": "XMLSerialization",
+  "description": "Full-scene serialization",
+  "unity": "2020.1",
+  "unityRelease": "5f1",
+  "keywords": [
+    "serialization",
+    "save",
+    "load",
+    "xml"
+  ],
+  "author": {
+    "name": "64bleat",
+    "email": "64bleat@gmail.com",
+    "url": "https://github.com/64bleat/XMLSerialization-Unity"
+  }
+}

@@ -1,7 +1,4 @@
-﻿using SHK.World;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Serialization
 {
@@ -28,7 +25,7 @@ namespace Serialization
                 mass = r.mass;
                 drag = r.drag;
                 angularDrag = r.angularDrag;
-                useGravity = r.useGravity || r.gameObject.GetComponent<IGravityUser>() != null;
+                useGravity = r.useGravity;
                 isKinematic = r.isKinematic;
                 velocity = r.velocity;
                 angularVelocity = r.angularVelocity;

@@ -10,7 +10,7 @@ namespace Serialization
     /// these classes.</summary>
     /// <remarks> Some classes, like GameObject, require <c>Deserialize</c> to instantiate
     /// the serialized components before deserializing them. </remarks>
-    [System.Serializable]
+    [Serializable]
     public class XMLSurrogate
     {
         private static bool initialized = false;
@@ -31,12 +31,13 @@ namespace Serialization
         /// <summary>  Loads all surrogates and their associations into memory </summary>
         private static void Initialize()
         { 
-            foreach (Type surrogateType in Assembly.GetExecutingAssembly().GetTypes())
-                if (surrogateType.GetCustomAttribute(typeof(XMLSurrogateAttribute), false)
-                    is XMLSurrogateAttribute surrogateAttribute
-                    && surrogateAttribute.componentType != null
-                    && !savedComponents.ContainsKey(surrogateAttribute.componentType))
-                    savedComponents.Add(surrogateAttribute.componentType, surrogateType);
+            foreach(Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+                foreach (Type surrogateType in assembly.GetTypes())
+                    if (surrogateType.GetCustomAttribute(typeof(XMLSurrogateAttribute), false)
+                        is XMLSurrogateAttribute surrogateAttribute
+                        && surrogateAttribute.componentType != null
+                        && !savedComponents.ContainsKey(surrogateAttribute.componentType))
+                        savedComponents.Add(surrogateAttribute.componentType, surrogateType);
 
             initialized = true;
         }
