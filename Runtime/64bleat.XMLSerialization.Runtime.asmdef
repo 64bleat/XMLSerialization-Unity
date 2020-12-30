@@ -1,3 +1,14 @@
-﻿{
-	"name": "64bleat.XMLSerialization.Runtime"
+{
+    "name": "64bleat.XMLSerialization.Runtime",
+    "rootNamespace": "Serialization",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

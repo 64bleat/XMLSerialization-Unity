@@ -14,20 +14,26 @@ namespace Serialization
         [XmlAttribute] public int handle;
         public GameObjectXML[] gameObjectData;
 
-        public SceneXML() { }
+        public delegate void SerializationDelegate();
+        public static event SerializationDelegate OnSceneSerialized;
+
+        public SceneXML()
+        {
+            // Required for serialization
+        }
+
         public SceneXML(Scene s)
         {
             Serialize(s);
         }
 
-        public override XMLSurrogate Serialize(object o)
+        public override XMLSurrogate Serialize(dynamic o)
         {
-            Scene s = (Scene)o;
-          
-            if(s != null && SceneManager.GetActiveScene().buildIndex == s.buildIndex)
+            if(o is Scene s && SceneManager.GetActiveScene().buildIndex == s.buildIndex)
             { 
                 List<GameObjectXML> gameObjects = new List<GameObjectXML>();
-                GatherGameObjectXML(ref gameObjects, s.GetRootGameObjects());
+
+                GatherGameObjectXML(gameObjects, s.GetRootGameObjects());
                 handle = s.handle;
                 buildIndex = s.buildIndex;
                 gameObjectData = gameObjects.ToArray();
@@ -38,9 +44,7 @@ namespace Serialization
 
         public override XMLSurrogate Deserialize(object o)
         {
-            Scene s = (Scene)o;
-
-            if (s != null)
+            if(o is Scene currentScene)
             {
                 if (SceneManager.GetActiveScene().buildIndex != buildIndex)
                 {
@@ -48,20 +52,23 @@ namespace Serialization
                     SceneManager.LoadScene(buildIndex);
                 }
                 else
-                    DeserializeOnLoad(s, LoadSceneMode.Single);
+                    DeserializeOnLoad(currentScene, LoadSceneMode.Single);
             }
 
             return this;
         }
 
-        private void DeserializeOnLoad(Scene s, LoadSceneMode m)
+        private void DeserializeOnLoad(Scene loadedScene, LoadSceneMode m)
         {
             SceneManager.sceneLoaded -= DeserializeOnLoad;
 
-            DestroyNonpersistentGameObjects(s.GetRootGameObjects());
+            DestroyNonpersistentGameObjects(loadedScene.GetRootGameObjects());
 
             foreach (GameObjectXML goxml in gameObjectData)
                 goxml.Deserialize(null);
+
+            OnSceneSerialized?.Invoke();
+            OnSceneSerialized = null;
         }
 
         private static void DestroyNonpersistentGameObjects(GameObject[] list)
@@ -75,14 +82,14 @@ namespace Serialization
                             DestroyNonpersistentGameObjects(TransformXML.GetChildGameObjects(go));
         }
 
-        private static void GatherGameObjectXML(ref List<GameObjectXML> saveObjects, GameObject[] list)
+        private static void GatherGameObjectXML(List<GameObjectXML> saveObjects, GameObject[] list)
         {
             foreach (GameObject gameObject in list)
             {
                 if (gameObject.GetComponent<XMLSerializeable>())
                     saveObjects.Add(new GameObjectXML(gameObject));
 
-                GatherGameObjectXML(ref saveObjects, TransformXML.GetChildGameObjects(gameObject));
+                GatherGameObjectXML(saveObjects, TransformXML.GetChildGameObjects(gameObject));
             }
         }
     }

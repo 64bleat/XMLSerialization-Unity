@@ -6,7 +6,7 @@ namespace Serialization
     /// <summary> Marks a GameObject as serializeable </summary>
     public class XMLSerializeable : MonoBehaviour
     {
-        [Tooltip("Deserialization spawns this prefab in the resources folder.")]
+        [Tooltip("The resource to instantiate upon deserialization")]
         public string resourceID;
         [Tooltip("Set this to a unique id if this GameObject isn't meant to be destroyed on deserialization.")]
         public string persistentID;
@@ -31,6 +31,11 @@ namespace Serialization
                 return go;
             else
                 return null;
+        }
+
+        public static bool TryGetPersistentGameObject(string guid, out GameObject gameObject)
+        {
+            return dic.TryGetValue(guid ?? "", out gameObject);
         }
     }
 }

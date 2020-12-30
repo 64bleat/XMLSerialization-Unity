@@ -11,33 +11,45 @@ namespace Serialization
     /// <remarks> Some classes, like GameObject, require <c>Deserialize</c> to instantiate
     /// the serialized components before deserializing them. </remarks>
     [Serializable]
-    public class XMLSurrogate
+    public class XMLSurrogate : ISurrogate
     {
         private static bool initialized = false;
-        private static readonly Dictionary<Type, Type> savedComponents = new Dictionary<Type, Type>();
+        private static readonly Dictionary<Type, Type> surrogateMap = new Dictionary<Type, Type>();
+
+        ISurrogate ISurrogate.Serialize(dynamic o)
+        {
+            return Serialize(o);
+        }
+
+        ISurrogate ISurrogate.Deserialize(dynamic o)
+        {
+            return Deserialize(o);
+        }
 
         /// <summary> Creates a serialization surrogate for the specified class. </summary>
         /// <remarks> o must be typecast to the specified class within the method.</remarks>
         /// <param name="o"> the object that will be converted to a serialization surrogate </param>
         /// <returns> a generated serialization surrogate for o</returns>
-        public virtual XMLSurrogate Serialize(object o) { return this; }
+        public virtual XMLSurrogate Serialize(dynamic o) { return this; }
 
         /// <summary> Applies info in a serialization surrogate onto an instance of the specified class </summary>
         /// <remarks> The instance must already exist. <c>Deserialize</c> usually doesn't create the instance. </remarks>
         /// <param name="o"> the object that will receive this serialization surrogate's data </param>
         /// <returns> (This should be changed to just return void) </returns>
-        public virtual XMLSurrogate Deserialize(object o) { return this; }
+        public virtual XMLSurrogate Deserialize(dynamic o) { return this; }
 
         /// <summary>  Loads all surrogates and their associations into memory </summary>
         private static void Initialize()
-        { 
+        {
+            Type xmlSurrogateAttributeType = typeof(XMLSurrogateAttribute);
+
             foreach(Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
                 foreach (Type surrogateType in assembly.GetTypes())
-                    if (surrogateType.GetCustomAttribute(typeof(XMLSurrogateAttribute), false)
+                    if (surrogateType.GetCustomAttribute(xmlSurrogateAttributeType, false)
                         is XMLSurrogateAttribute surrogateAttribute
                         && surrogateAttribute.componentType != null
-                        && !savedComponents.ContainsKey(surrogateAttribute.componentType))
-                        savedComponents.Add(surrogateAttribute.componentType, surrogateType);
+                        && !surrogateMap.ContainsKey(surrogateAttribute.componentType))
+                        surrogateMap.Add(surrogateAttribute.componentType, surrogateType);
 
             initialized = true;
         }
@@ -48,7 +60,7 @@ namespace Serialization
             if (!initialized)
                 Initialize();
 
-            return (from type in savedComponents.Values select type).ToArray();
+            return surrogateMap.Values.ToArray();
         }
 
         /// <summary> Returns an instance of the surrogate associated with the provided type </summary>
@@ -69,10 +81,20 @@ namespace Serialization
             if (!initialized)
                 Initialize();
 
-            if (savedComponents.TryGetValue(componentType, out Type surrogateType))
+            if (surrogateMap.TryGetValue(componentType, out Type surrogateType))
                 return surrogateType;
             else
                 return null;
+        }
+
+        public static bool TryGetComponentType(Type surrogateType, out Type componentType)
+        {
+            Type attributeType = typeof(XMLSurrogateAttribute);
+            XMLSurrogateAttribute surrogate = Attribute.GetCustomAttribute(surrogateType, attributeType) as XMLSurrogateAttribute;
+
+            componentType = surrogate?.componentType ?? default;
+
+            return componentType?.Equals(default) ?? false;
         }
     }
 }

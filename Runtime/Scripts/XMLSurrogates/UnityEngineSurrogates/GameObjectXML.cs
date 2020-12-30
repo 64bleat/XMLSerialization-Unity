@@ -15,11 +15,16 @@ namespace Serialization
         [XmlAttribute] public int instanceID;
         [XmlAttribute] public bool isStatic;
         [XmlAttribute] public bool activeSelf;
-        public XMLSurrogate[] componentData;
+        public List<XMLSurrogate> componentData;
 
         private static readonly Dictionary<string, GameObject> loadedGameObjects = new Dictionary<string, GameObject>();
+        private static readonly List<Type> componentBuffer = new List<Type>();
 
-        public GameObjectXML() { }
+        public GameObjectXML() 
+        {
+            // Necessary for serialization
+        }
+
         public GameObjectXML(GameObject go)
         {
             Serialize(go);
@@ -28,46 +33,40 @@ namespace Serialization
         public override XMLSurrogate Serialize(object o)
         {
             GameObject go = o as GameObject;
-            List<XMLSurrogate> serializedComponents = new List<XMLSurrogate>();
 
-            // Serialize GameObject Components
-            foreach(Component component in go.GetComponents<Component>())
-                if (InstantiateSurrogateFor(component.GetType()) is var surrogate && surrogate != null)
-                    serializedComponents.Add(surrogate.Serialize(component));
-
-            componentData = serializedComponents.ToArray();
             name = go.name;
             tag = go.tag;
             layer = go.layer;
             instanceID = go.GetInstanceID();
             isStatic = go.isStatic;
             activeSelf = go.activeSelf;
+            componentData = new List<XMLSurrogate>();
+
+            foreach (Component component in go.GetComponents<Component>())
+                if (InstantiateSurrogateFor(component.GetType()) is var surrogate && surrogate != null)
+                    componentData.Add(surrogate.Serialize(component));
 
             return this;
         }
 
-        /// <summary>
-        /// Unlike other XMLSurrogates, GameObjectXML handles instancing
-        /// rather than having an instance handed to it for deserialization.
-        /// </summary>
-        /// <param name="d"> unused </param>
-        /// <returns> this </returns>
-        public override XMLSurrogate Deserialize(object d)
+        /// <param name="_"> unused null, surrogate handles instantiation </param>
+        /// <returns> a newly instantiated and deserialized GameObject </returns>
+        public override XMLSurrogate Deserialize(dynamic _)
         {
             XMLSerializeableXML sInfo = null;
             TransformXML tInfo = null;
 
-            for (int i = 0; i < componentData.Length && sInfo == null; i++)
+            for (int i = 0; i < componentData.Count && sInfo == null; i++)
                 sInfo = componentData[i] as XMLSerializeableXML;
 
-            for (int i = 0; i < componentData.Length && tInfo == null; i++)
+            for (int i = 0; i < componentData.Count && tInfo == null; i++)
                 tInfo = componentData[i] as TransformXML;
 
             /*  1:  Finds a persistent parent in scene to deserialize onto.
              *  2:  Deserializes onto an instantiated prefab.
-             *  3:  Deserializes onto a brand new, empty GameObject.    */
-            if(XMLSerializeable.GetPersistentGameObject(sInfo.persistentID) is GameObject pgo && pgo)  
-                DeserializeGameObject(pgo);
+             *  3:  Deserializes onto a brand new, empty GameObject.   */
+            if(XMLSerializeable.TryGetPersistentGameObject(sInfo.persistentID, out GameObject go))
+                DeserializeGameObject(go);
             else if(LoadResource(sInfo.resourceID) is GameObject pr && pr)
                 DeserializeGameObject(
                     UnityEngine.Object.Instantiate(pr, 
@@ -75,40 +74,40 @@ namespace Serialization
                         TransformXML.GetParentFor(tInfo.parentPath, tInfo.parentID)));
             else
             {
-                List<Type> componentsToAdd = new List<Type>();
-
+                componentBuffer.Clear();
                 // Get needed Component types for serialized Components.
                 foreach(XMLSurrogate componentSurrogate in componentData)
-                    if (Attribute.GetCustomAttribute(componentSurrogate.GetType(), typeof(XMLSurrogateAttribute)) is XMLSurrogateAttribute attribute 
-                        && attribute?.componentType?.Equals(typeof(Transform)) == false)
-                        componentsToAdd.Add(attribute.componentType);
+                    if(XMLSurrogate.TryGetComponentType(componentSurrogate.GetType(), out Type componentType)
+                        && !componentType.Equals(typeof(Transform)))
+                        componentBuffer.Add(componentType);
 
-                DeserializeGameObject(new GameObject(name, componentsToAdd.ToArray()));
+                DeserializeGameObject(new GameObject(name, componentBuffer.ToArray()));
             }
 
             return this;
         }
 
+        /// <summary>
+        /// The desired scene must be loaded before gameobjects can be deserialized.
+        /// Deserialization is separated so it may be called on <c>SceneManager.sceneLoaded</c>
+        /// if it is not already loaded.
+        /// </summary>
+        /// <param name="go"></param>
         public void DeserializeGameObject(GameObject go)
         {
             if (go)
             {
                 Component[] components = go.GetComponents<Component>();
-                List<XMLSurrogate> serializedComponents = new List<XMLSurrogate>(componentData);
+
+                foreach (Component c in components)
+                    if(TryTakeSurrogate(componentData, GetSurrogateTypeFor(c.GetType()), out XMLSurrogate surrogate))
+                        surrogate.Deserialize(c);
 
                 go.name = name;
                 go.tag = tag;
                 go.layer = layer;
                 go.isStatic = isStatic;
                 go.SetActive(activeSelf);
-
-                foreach (Component c in components)
-                {
-                    Type surrogateType = GetSurrogateTypeFor(c.GetType());
-                    XMLSurrogate surrogate = PullSurrogate(serializedComponents, surrogateType);
-
-                    surrogate?.Deserialize(c);
-                }
             }
         }
 
@@ -139,18 +138,25 @@ namespace Serialization
             loadedGameObjects.Clear();
         }
 
-
-        private static XMLSurrogate PullSurrogate(List<XMLSurrogate> list, Type type)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="list"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        private static bool TryTakeSurrogate(List<XMLSurrogate> list, Type type, out XMLSurrogate surrogate)
         {
             for(int i = 0; i < list.Count; i++)
                 if(type?.Equals(list[i].GetType()) == true)
                 {
-                    XMLSurrogate pick = list[i];
+                    surrogate = list[i];
                     list.RemoveAt(i);
-                    return pick;
+                    return true;
                 }
 
-            return null;
+            surrogate = null;
+
+            return false;
         }
     }
 }
