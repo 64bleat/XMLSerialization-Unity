@@ -58,6 +58,7 @@ namespace Serialization
         private static int[] GetParentPath(Transform t, ref string persistentParent)
         {
             Stack<int> parentPath = new Stack<int>();
+            Transform original = t;
 
             do
             {
@@ -70,6 +71,9 @@ namespace Serialization
                 }       
             }
             while (t = t.parent);
+
+            if (parentPath.Count > 2)
+                Debug.LogWarning($"Fix PersistentParent for {original.gameObject.name}. parentCount: {parentPath.Count - 1} parent: {persistentParent}", original.parent.gameObject ?? original.gameObject);
 
             return parentPath.ToArray();
         }

@@ -11,32 +11,22 @@ namespace Serialization
     /// <remarks> Some classes, like GameObject, require <c>Deserialize</c> to instantiate
     /// the serialized components before deserializing them. </remarks>
     [Serializable]
-    public class XMLSurrogate : ISurrogate
+    public abstract class XMLSurrogate
     {
         private static bool initialized = false;
         private static readonly Dictionary<Type, Type> surrogateMap = new Dictionary<Type, Type>();
-
-        ISurrogate ISurrogate.Serialize(dynamic o)
-        {
-            return Serialize(o);
-        }
-
-        ISurrogate ISurrogate.Deserialize(dynamic o)
-        {
-            return Deserialize(o);
-        }
 
         /// <summary> Creates a serialization surrogate for the specified class. </summary>
         /// <remarks> o must be typecast to the specified class within the method.</remarks>
         /// <param name="o"> the object that will be converted to a serialization surrogate </param>
         /// <returns> a generated serialization surrogate for o</returns>
-        public virtual XMLSurrogate Serialize(dynamic o) { return this; }
+        public abstract XMLSurrogate Serialize(dynamic o);
 
         /// <summary> Applies info in a serialization surrogate onto an instance of the specified class </summary>
         /// <remarks> The instance must already exist. <c>Deserialize</c> usually doesn't create the instance. </remarks>
         /// <param name="o"> the object that will receive this serialization surrogate's data </param>
         /// <returns> (This should be changed to just return void) </returns>
-        public virtual XMLSurrogate Deserialize(dynamic o) { return this; }
+        public abstract XMLSurrogate Deserialize(dynamic o);
 
         /// <summary>  Loads all surrogates and their associations into memory </summary>
         private static void Initialize()

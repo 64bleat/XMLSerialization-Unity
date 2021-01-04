@@ -17,9 +17,12 @@ namespace Serialization
 
         private void Awake()
         {
-            if (persistentID != null && persistentID.Length != 0 && !dic.ContainsKey(persistentID))
-                dic.Add(persistentID, gameObject);
-            //else throw exception
+            if (persistentID == null || persistentID.Length == 0)
+                Debug.Log($"Empty PersistentID on {gameObject.name}");
+            else if(dic.ContainsKey(persistentID))
+                Debug.LogError($"PersistentID duplicate on {gameObject.name}, ID: {persistentID}", gameObject);
+            else
+                dic.Add(persistentID, gameObject);   
         }
 
         private void OnDestroy()

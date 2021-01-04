@@ -19,10 +19,21 @@ namespace Serialization
             string directory = Application.persistentDataPath + saveFolder;
             string path = directory + filePath + filetype;
             Directory.CreateDirectory(directory);
-            FileStream stream = File.Create(path);
             XmlSerializer serializer = new XmlSerializer(typeof(T), XMLSurrogate.GetLoadedSurrogates());
+            Stream stream = File.Create(path);
+
             serializer.Serialize(stream, saveData);
             stream.Close();
+        }
+
+        public static string SaveToString<T>(T data)
+        {
+            XmlSerializer serializer = new XmlSerializer(typeof(T), XMLSurrogate.GetLoadedSurrogates());
+            StringWriter writer = new StringWriter();
+
+            serializer.Serialize(writer, data);
+
+            return writer.ToString();
         }
 
         /// <summary> Saves an instance of a type and its heirarchy into an xml file </summary>
@@ -31,18 +42,28 @@ namespace Serialization
         public static T Load<T>(string filePath)
         {
             string path = Application.persistentDataPath + saveFolder + filePath + filetype;
-            FileStream stream = File.Open(path, FileMode.Open);
-            XmlSerializer serializer = new XmlSerializer(typeof(T), XMLSurrogate.GetLoadedSurrogates());
-            T data = SaveExists(filePath) ? (T)serializer.Deserialize(stream) : default;
-            stream.Close();
+            T data;
+
+            if (SaveExists(filePath))
+            {
+                FileStream stream = File.Open(path, FileMode.Open);
+                XmlSerializer serializer = new XmlSerializer(typeof(T), XMLSurrogate.GetLoadedSurrogates());
+
+                data = (T)serializer.Deserialize(stream);
+                stream.Close();
+            }
+            else
+                data = default;
+
+            
             return data;
         }
 
         /// <summary> Ensures the file at the given path exists. </summary>
-        /// <param name="filePath"> file path relative to <c>Application.persistentDataPath</c></param>
-        public static bool SaveExists(string filePath)
+        /// <param name="fileName"> file path relative to <c>Application.persistentDataPath</c></param>
+        public static bool SaveExists(string fileName)
         {
-            string path = Application.persistentDataPath + saveFolder + filePath + filetype;
+            string path = Application.persistentDataPath + saveFolder + fileName + filetype;
             return File.Exists(path);
         }
     }
