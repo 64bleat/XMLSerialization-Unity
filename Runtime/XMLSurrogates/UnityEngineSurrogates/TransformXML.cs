@@ -35,7 +35,6 @@ namespace Serialization
         {
             if (o is Transform t)
             {
-                //t.SetSiblingIndex(parentPath[parentPath.Length - 1]);
                 t.SetPositionAndRotation(position, rotation);
                 t.localScale = localScale;
 

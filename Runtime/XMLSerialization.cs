@@ -59,6 +59,26 @@ namespace Serialization
             return data;
         }
 
+        public static bool TryLoad<T>(string filePath, out T data)
+        {
+            string path = Application.persistentDataPath + saveFolder + filePath + filetype;
+            bool exists = SaveExists(filePath);
+
+            if (exists)
+            {
+                FileStream stream = File.Open(path, FileMode.Open);
+                XmlSerializer serializer = new XmlSerializer(typeof(T), XMLSurrogate.GetLoadedSurrogates());
+
+                data = (T)serializer.Deserialize(stream);
+                stream.Close();
+            }
+            else
+                data = default;
+
+
+            return exists;
+        }
+
         /// <summary> Ensures the file at the given path exists. </summary>
         /// <param name="fileName"> file path relative to <c>Application.persistentDataPath</c></param>
         public static bool SaveExists(string fileName)

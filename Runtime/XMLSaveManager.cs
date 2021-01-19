@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 
 namespace Serialization
@@ -8,8 +9,10 @@ namespace Serialization
     /// </summary>
     public class XMLSaveManager : ScriptableObject
     {
-        //public BroadcastChannel messageChannel;
-        public static bool isRunning = false;
+        public UnityEvent onSave;
+        public UnityEvent onLoad;
+
+        private static float originalTime;
 
         private void OnDestroy()
         {
@@ -22,31 +25,30 @@ namespace Serialization
             float originalTime = Time.timeScale;
 
             Time.timeScale = 0;
-
-            //if (messageChannel)
-            //    messageChannel.Broadcast("Quicksaved");
-
             XMLSerialization.Save(new SceneXML(SceneManager.GetActiveScene()), "Quicksave");
-
             Time.timeScale = originalTime;
+            onSave?.Invoke();
         }
 
         /// <summary> Deserializes a scene and loads it it is not loaded. </summary>
         public void Quickload()
         {
-            isRunning = true;
-            float originalTime = Time.timeScale;
+            originalTime = Time.timeScale;
             Time.timeScale = 0;
-            SceneXML data = XMLSerialization.Load<SceneXML>("Quicksave");
 
-            if (data != null)
+            if (XMLSerialization.TryLoad("Quicksave", out SceneXML data))
+            {
+                SceneXML.OnSceneSerialized += InvokeOnLoad;
                 data.Deserialize(SceneManager.GetActiveScene());
+            }
 
-            //if (messageChannel)
-            //    messageChannel.Broadcast("Quickloaded");
+        }
 
+        private void InvokeOnLoad()
+        {
+            SceneXML.OnSceneSerialized -= InvokeOnLoad;
             Time.timeScale = originalTime;
-            isRunning = false;
+            onLoad?.Invoke();
         }
     }
 }
