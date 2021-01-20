@@ -17,6 +17,8 @@ namespace Serialization
         [XmlAttribute] public bool activeSelf;
         public List<XMLSurrogate> componentData;
 
+        private GameObject instance;
+
         private static readonly Dictionary<string, GameObject> loadedGameObjects = new Dictionary<string, GameObject>();
         private static readonly List<Type> componentBuffer = new List<Type>();
 
@@ -97,16 +99,20 @@ namespace Serialization
         {
             if (go)
             {
+
+                go.name = name;
+                go.tag = tag;
+                go.layer = layer;
+                go.isStatic = isStatic;
+
+                go.SetActive(false);
+
                 Component[] components = go.GetComponents<Component>();
 
                 foreach (Component c in components)
                     if(TryTakeSurrogate(componentData, GetSurrogateTypeFor(c.GetType()), out XMLSurrogate surrogate))
                         surrogate.Deserialize(c);
 
-                go.name = name;
-                go.tag = tag;
-                go.layer = layer;
-                go.isStatic = isStatic;
                 go.SetActive(activeSelf);
             }
         }

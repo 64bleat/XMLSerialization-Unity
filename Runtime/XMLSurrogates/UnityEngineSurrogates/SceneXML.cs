@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.SceneManagement;
+﻿using System;
+using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Serialization;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
 namespace Serialization
 {
@@ -14,8 +16,8 @@ namespace Serialization
         [XmlAttribute] public int handle;
         public GameObjectXML[] gameObjectData;
 
-        public delegate void SerializationDelegate();
-        public static event SerializationDelegate OnSceneSerialized;
+        /// <summary> called immediately after a scene has been fully deserialized </summary>
+        public static event Action OnSceneSerialized;
 
         public SceneXML()
         {
@@ -48,19 +50,19 @@ namespace Serialization
             {
                 if (SceneManager.GetActiveScene().buildIndex != buildIndex)
                 {
-                    SceneManager.sceneLoaded += DeserializeOnLoad;
+                    SceneManager.sceneLoaded += DeserializeOnSceneLoaded;
                     SceneManager.LoadScene(buildIndex);
                 }
                 else
-                    DeserializeOnLoad(currentScene, LoadSceneMode.Single);
+                    DeserializeOnSceneLoaded(currentScene, LoadSceneMode.Single);
             }
 
             return this;
         }
 
-        private void DeserializeOnLoad(Scene loadedScene, LoadSceneMode m)
+        private void DeserializeOnSceneLoaded(Scene loadedScene, LoadSceneMode m)
         {
-            SceneManager.sceneLoaded -= DeserializeOnLoad;
+            SceneManager.sceneLoaded -= DeserializeOnSceneLoaded;
 
             DestroyNonpersistentGameObjects(loadedScene.GetRootGameObjects());
 
@@ -76,7 +78,7 @@ namespace Serialization
             if(list != null)
                 foreach(GameObject go in list)
                     if(go)
-                        if (go.GetComponent<XMLSerializeable>() is var sInfo && sInfo && (sInfo.persistentID == null || sInfo.persistentID.Length == 0))
+                        if (go.TryGetComponent(out XMLSerializeable sInfo) && (sInfo.persistentID == null || sInfo.persistentID.Length == 0))
                             Object.DestroyImmediate(go);
                         else
                             DestroyNonpersistentGameObjects(TransformXML.GetChildGameObjects(go));
@@ -86,7 +88,7 @@ namespace Serialization
         {
             foreach (GameObject gameObject in list)
             {
-                if (gameObject.GetComponent<XMLSerializeable>())
+                if (gameObject.TryGetComponent(out XMLSerializeable _))
                     saveObjects.Add(new GameObjectXML(gameObject));
 
                 GatherGameObjectXML(saveObjects, TransformXML.GetChildGameObjects(gameObject));
