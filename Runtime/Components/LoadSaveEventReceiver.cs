@@ -6,7 +6,7 @@ namespace Serialization
     /// <summary>
     /// These events are called after loading and saving.
     /// </summary>
-    public class LoadSaveEventHook : MonoBehaviour
+    public class LoadSaveEventReceiver : MonoBehaviour
     {
         public XMLSaveManager saveManager;
         public UnityEvent onLoad;

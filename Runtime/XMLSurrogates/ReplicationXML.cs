@@ -2,9 +2,12 @@
 
 namespace Serialization
 {
+    /// <summary>
+    /// Data required to spawn a serializeable GameObject upon load.
+    /// </summary>
     [System.Serializable]
     [XMLSurrogate(typeof(XMLSerializeable))]
-    public class XMLSerializeableXML : XMLSurrogate
+    public class ReplicationXML : XMLSurrogate
     {
         [XmlAttribute] public string resourceID;
         [XmlAttribute] public string persistentID;

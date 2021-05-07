@@ -55,11 +55,11 @@ namespace Serialization
         /// <returns> a newly instantiated and deserialized GameObject </returns>
         public override XMLSurrogate Deserialize(dynamic _)
         {
-            XMLSerializeableXML sInfo = null;
+            ReplicationXML sInfo = null;
             TransformXML tInfo = null;
 
             for (int i = 0; i < componentData.Count && sInfo == null; i++)
-                sInfo = componentData[i] as XMLSerializeableXML;
+                sInfo = componentData[i] as ReplicationXML;
 
             for (int i = 0; i < componentData.Count && tInfo == null; i++)
                 tInfo = componentData[i] as TransformXML;

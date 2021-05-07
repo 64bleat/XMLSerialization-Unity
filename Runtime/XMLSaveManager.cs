@@ -9,6 +9,8 @@ namespace Serialization
     /// </summary>
     public class XMLSaveManager : ScriptableObject
     {
+        [SerializeField] private string fileName = "Quicksave";
+
         public UnityEvent onSave;
         public UnityEvent onLoad;
 
@@ -19,18 +21,26 @@ namespace Serialization
             GameObjectXML.UnloadResources();
         }
 
-        /// <summary> Serializes and saves the current scene. </summary>
+        /// <summary> 
+        /// Serializes and saves the current scene to a file. 
+        /// </summary>
         public void Quicksave()
         {
-            float originalTime = Time.timeScale;
-
+            originalTime = Time.timeScale;
             Time.timeScale = 0;
-            XMLSerialization.Save(new SceneXML(SceneManager.GetActiveScene()), "Quicksave");
-            Time.timeScale = originalTime;
+
+            Scene activeScene = SceneManager.GetActiveScene();
+            SceneXML serializableScene = new SceneXML(activeScene);
+
+            XMLSerialization.Save(serializableScene, fileName);
             onSave?.Invoke();
+
+            Time.timeScale = originalTime;
         }
 
-        /// <summary> Deserializes a scene and loads it it is not loaded. </summary>
+        /// <summary> 
+        /// Deserializes a scene and pre-loads the scene if it is not loaded. 
+        /// </summary>
         public void Quickload()
         {
             originalTime = Time.timeScale;
@@ -41,9 +51,11 @@ namespace Serialization
                 SceneXML.OnSceneSerialized += InvokeOnLoad;
                 data.Deserialize(SceneManager.GetActiveScene());
             }
-
         }
 
+        /// <summary>
+        /// This portion of QuickLoad must be completed during the <c>OnSceneLoaded</c> callback
+        /// </summary>
         private void InvokeOnLoad()
         {
             SceneXML.OnSceneSerialized -= InvokeOnLoad;
